@@ -80,6 +80,28 @@
 #[cfg(feature = "std")]
 extern crate std;
 
+// Accelerated precompiles for zkvm. Defined directly to prevent circular dependency issues.
+#[cfg(target_os = "zkvm")]
+extern "C" {
+    /// Sphinx syscall for adding two u32 words
+    pub fn syscall_blake2s_add_2(left: *mut u32, right: *const u32);
+
+    /// Sphinx syscall for adding three u32 words
+    pub fn syscall_blake2s_add_3(left: *mut u32, right: *const u32);
+
+    /// Sphinx syscall for xoring and rotating (to 16) two u32 words
+    pub fn syscall_blake2s_xor_rotate_right_16(left: *mut u32, right: *const u32);
+
+    /// Sphinx syscall for xoring and rotating (to 12) two u32 words
+    pub fn syscall_blake2s_xor_rotate_right_12(left: *mut u32, right: *const u32);
+
+    /// Sphinx syscall for xoring and rotating (to 8) two u32 words
+    pub fn syscall_blake2s_xor_rotate_right_8(left: *mut u32, right: *const u32);
+
+    /// Sphinx syscall for xoring and rotating (to 7) two u32 words
+    pub fn syscall_blake2s_xor_rotate_right_7(left: *mut u32, right: *const u32);
+}
+
 pub use digest::{self, Digest};
 
 use core::{convert::TryInto, fmt, marker::PhantomData, ops::Div};

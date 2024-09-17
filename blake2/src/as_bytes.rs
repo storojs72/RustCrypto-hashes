@@ -11,6 +11,7 @@ use core::slice;
 #[allow(clippy::missing_safety_doc)]
 pub unsafe trait Safe {}
 
+#[allow(dead_code)]
 pub trait AsBytes {
     fn as_bytes(&self) -> &[u8];
     fn as_mut_bytes(&mut self) -> &mut [u8];

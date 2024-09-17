@@ -6,6 +6,7 @@ version = 3
 name = "blake2"
 version = "0.10.6"
 dependencies = [
+ "cfg-if",
  "digest",
  "hex-literal",
 ]

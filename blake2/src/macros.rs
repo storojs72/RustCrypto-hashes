@@ -137,81 +137,20 @@ macro_rules! blake2_impl {
                         if #[cfg(all(target_os = "zkvm"))] {
                             // TODO enforce usage on u32 words
                             // TODO fix weird memory layout (if possible)
-
-                            // v[0] = v[0].wrapping_add(v[1]).wrapping_add(m.from_le());
-                            let mut a = [v[0].0, v[0].1, v[0].2, v[0].3];
-                            let m_ = $vec::gather(m, s[0], s[2], s[4], s[6]);
-                            let b = [v[1].0, v[1].1, v[1].2, v[1].3, m_.0, m_.1, m_.2, m_.3, 0, 0, 0, 0];
                             unsafe {
-                                syscall_blake2s_add_3(a.as_mut_ptr() as *mut u32, b.as_ptr() as *mut u32);
+                                //let mut a = [v[0].0, v[0].1, v[0].2, v[0].3, v[1].0, v[1].1, v[1].2, v[1].3, v[2].0, v[2].1, v[2].2, v[2].3, v[3].0, v[3].1, v[3].2, v[3].3];
+                                let m1 = $vec::gather(m, s[0], s[2], s[4], s[6]).from_le();
+                                let m2 = $vec::gather(m, s[1], s[3], s[5], s[7]).from_le();
+                                let b = [m1.0, m1.1, m1.2, m1.3, m2.0, m2.1, m2.2, m2.3, 0, 0, 0, 0, 0, 0, 0, 0];
+                                //syscall_blake2s_quarter_round_2x(a.as_mut_ptr() as *mut u32, b.as_ptr() as *const u32);
+                                //v[0] = $vec::new(a[0], a[1], a[2], a[3]);
+                                //v[1] = $vec::new(a[4], a[5], a[6], a[7]);
+                                //v[2] = $vec::new(a[8], a[9], a[10], a[11]);
+                                //v[3] = $vec::new(a[12], a[13], a[14], a[15]);
+                                syscall_blake2s_quarter_round_2x(&mut v[0].0 as *mut $word as *mut u32, b.as_ptr() as *const u32);
                             }
-                            v[0] = $vec::new(a[0], a[1], a[2], a[3]);
-
-
-                            // v[3] = (v[3] ^ v[0]).rotate_right_const(rd);
-                            let mut a = [v[3].0, v[3].1, v[3].2, v[3].3];
-                            let b = [v[0].0, v[0].1, v[0].2, v[0].3];
-                            unsafe {
-                                syscall_blake2s_xor_rotate_right_16(a.as_mut_ptr() as *mut u32, b.as_ptr() as *mut u32);
-                            }
-                            v[3] = $vec::new(a[0], a[1], a[2], a[3]);
-
-
-                            // v[2] = v[2].wrapping_add(v[3]);
-                            let mut a = [v[2].0, v[2].1, v[2].2, v[2].3];
-                            let b = [v[3].0, v[3].1, v[3].2, v[3].3, 0, 0, 0, 0, 0, 0, 0, 0];
-                            unsafe {
-                                syscall_blake2s_add_2(a.as_mut_ptr() as *mut u32, b.as_ptr() as *mut u32);
-                            }
-                            v[2] = $vec::new(a[0], a[1], a[2], a[3]);
-
-
-                            // v[1] = (v[1] ^ v[2]).rotate_right_const(rb);
-                            let mut a = [v[1].0, v[1].1, v[1].2, v[1].3];
-                            let b = [v[2].0, v[2].1, v[2].2, v[2].3];
-                            unsafe {
-                                syscall_blake2s_xor_rotate_right_12(a.as_mut_ptr() as *mut u32, b.as_ptr() as *mut u32);
-                            }
-                            v[1] = $vec::new(a[0], a[1], a[2], a[3]);
                         } else {
                             quarter_round(v, $R1, $R2, $vec::gather(m, s[0], s[2], s[4], s[6]));
-                        }
-                    }
-
-                    cfg_if::cfg_if! {
-                        if #[cfg(all(target_os = "zkvm"))] {
-                            let mut a = [v[0].0, v[0].1, v[0].2, v[0].3];
-                            let m_ = $vec::gather(m, s[1], s[3], s[5], s[7]);
-                            let b = [v[1].0, v[1].1, v[1].2, v[1].3, m_.0, m_.1, m_.2, m_.3, 0, 0, 0, 0];
-                            unsafe {
-                                syscall_blake2s_add_3(a.as_mut_ptr() as *mut u32, b.as_ptr() as *mut u32);
-                            }
-                            v[0] = $vec::new(a[0], a[1], a[2], a[3]);
-
-
-                            let mut a = [v[3].0, v[3].1, v[3].2, v[3].3];
-                            let b = [v[0].0, v[0].1, v[0].2, v[0].3];
-                            unsafe {
-                                syscall_blake2s_xor_rotate_right_8(a.as_mut_ptr() as *mut u32, b.as_ptr() as *mut u32);
-                            }
-                            v[3] = $vec::new(a[0], a[1], a[2], a[3]);
-
-
-                            let mut a = [v[2].0, v[2].1, v[2].2, v[2].3];
-                            let b = [v[3].0, v[3].1, v[3].2, v[3].3, 0, 0, 0, 0, 0, 0, 0, 0];
-                            unsafe {
-                                syscall_blake2s_add_2(a.as_mut_ptr() as *mut u32, b.as_ptr() as *mut u32);
-                            }
-                            v[2] = $vec::new(a[0], a[1], a[2], a[3]);
-
-
-                            let mut a = [v[1].0, v[1].1, v[1].2, v[1].3];
-                            let b = [v[2].0, v[2].1, v[2].2, v[2].3];
-                            unsafe {
-                                syscall_blake2s_xor_rotate_right_7(a.as_mut_ptr() as *mut u32, b.as_ptr() as *mut u32);
-                            }
-                            v[1] = $vec::new(a[0], a[1], a[2], a[3]);
-                        } else {
                             quarter_round(v, $R3, $R4, $vec::gather(m, s[1], s[3], s[5], s[7]));
                         }
                     }
@@ -220,76 +159,20 @@ macro_rules! blake2_impl {
 
                     cfg_if::cfg_if! {
                         if #[cfg(all(target_os = "zkvm"))] {
-                            let mut a = [v[0].0, v[0].1, v[0].2, v[0].3];
-                            let m_ = $vec::gather(m, s[8], s[10], s[12], s[14]);
-                            let b = [v[1].0, v[1].1, v[1].2, v[1].3, m_.0, m_.1, m_.2, m_.3, 0, 0, 0, 0];
                             unsafe {
-                                syscall_blake2s_add_3(a.as_mut_ptr() as *mut u32, b.as_ptr() as *mut u32);
+                                //let mut a = [v[0].0, v[0].1, v[0].2, v[0].3, v[1].0, v[1].1, v[1].2, v[1].3, v[2].0, v[2].1, v[2].2, v[2].3, v[3].0, v[3].1, v[3].2, v[3].3];
+                                let m1 = $vec::gather(m, s[8], s[10], s[12], s[14]).from_le();
+                                let m2 = $vec::gather(m, s[9], s[11], s[13], s[15]).from_le();
+                                let b = [m1.0, m1.1, m1.2, m1.3, m2.0, m2.1, m2.2, m2.3, 0, 0, 0, 0, 0, 0, 0, 0];
+                                //syscall_blake2s_quarter_round_2x(a.as_mut_ptr() as *mut u32, b.as_ptr() as *const u32);
+                                //v[0] = $vec::new(a[0], a[1], a[2], a[3]);
+                                //v[1] = $vec::new(a[4], a[5], a[6], a[7]);
+                                //v[2] = $vec::new(a[8], a[9], a[10], a[11]);
+                                //v[3] = $vec::new(a[12], a[13], a[14], a[15]);
+                                syscall_blake2s_quarter_round_2x(&mut v[0].0 as *mut $word as *mut u32, b.as_ptr() as *const u32);
                             }
-                            v[0] = $vec::new(a[0], a[1], a[2], a[3]);
-
-
-                            let mut a = [v[3].0, v[3].1, v[3].2, v[3].3];
-                            let b = [v[0].0, v[0].1, v[0].2, v[0].3];
-                            unsafe {
-                                syscall_blake2s_xor_rotate_right_16(a.as_mut_ptr() as *mut u32, b.as_ptr() as *mut u32);
-                            }
-                            v[3] = $vec::new(a[0], a[1], a[2], a[3]);
-
-
-                            let mut a = [v[2].0, v[2].1, v[2].2, v[2].3];
-                            let b = [v[3].0, v[3].1, v[3].2, v[3].3, 0, 0, 0, 0, 0, 0, 0, 0];
-                            unsafe {
-                                syscall_blake2s_add_2(a.as_mut_ptr() as *mut u32, b.as_ptr() as *mut u32);
-                            }
-                            v[2] = $vec::new(a[0], a[1], a[2], a[3]);
-
-
-                            let mut a = [v[1].0, v[1].1, v[1].2, v[1].3];
-                            let b = [v[2].0, v[2].1, v[2].2, v[2].3];
-                            unsafe {
-                                syscall_blake2s_xor_rotate_right_12(a.as_mut_ptr() as *mut u32, b.as_ptr() as *mut u32);
-                            }
-                            v[1] = $vec::new(a[0], a[1], a[2], a[3]);
                         } else {
                             quarter_round(v, $R1, $R2, $vec::gather(m, s[8], s[10], s[12], s[14]));
-                        }
-                    }
-
-                    cfg_if::cfg_if! {
-                        if #[cfg(all(target_os = "zkvm"))] {
-                            let mut a = [v[0].0, v[0].1, v[0].2, v[0].3];
-                            let m_ = $vec::gather(m, s[9], s[11], s[13], s[15]);
-                            let b = [v[1].0, v[1].1, v[1].2, v[1].3, m_.0, m_.1, m_.2, m_.3, 0, 0, 0, 0];
-                            unsafe {
-                                syscall_blake2s_add_3(a.as_mut_ptr() as *mut u32, b.as_ptr() as *mut u32);
-                            }
-                            v[0] = $vec::new(a[0], a[1], a[2], a[3]);
-
-
-                            let mut a = [v[3].0, v[3].1, v[3].2, v[3].3];
-                            let b = [v[0].0, v[0].1, v[0].2, v[0].3];
-                            unsafe {
-                                syscall_blake2s_xor_rotate_right_8(a.as_mut_ptr() as *mut u32, b.as_ptr() as *mut u32);
-                            }
-                            v[3] = $vec::new(a[0], a[1], a[2], a[3]);
-
-
-                            let mut a = [v[2].0, v[2].1, v[2].2, v[2].3];
-                            let b = [v[3].0, v[3].1, v[3].2, v[3].3, 0, 0, 0, 0, 0, 0, 0, 0];
-                            unsafe {
-                                syscall_blake2s_add_2(a.as_mut_ptr() as *mut u32, b.as_ptr() as *mut u32);
-                            }
-                            v[2] = $vec::new(a[0], a[1], a[2], a[3]);
-
-
-                            let mut a = [v[1].0, v[1].1, v[1].2, v[1].3];
-                            let b = [v[2].0, v[2].1, v[2].2, v[2].3];
-                            unsafe {
-                                syscall_blake2s_xor_rotate_right_7(a.as_mut_ptr() as *mut u32, b.as_ptr() as *mut u32);
-                            }
-                            v[1] = $vec::new(a[0], a[1], a[2], a[3]);
-                        } else {
                             quarter_round(v, $R3, $R4, $vec::gather(m, s[9], s[11], s[13], s[15]));
                         }
                     }
@@ -317,6 +200,7 @@ macro_rules! blake2_impl {
                     Self::iv0(),
                     Self::iv1() ^ $vec::new(t0, t1, f0, f1),
                 ];
+
 
                 round(&mut v, &m, &SIGMA[0]);
                 round(&mut v, &m, &SIGMA[1]);

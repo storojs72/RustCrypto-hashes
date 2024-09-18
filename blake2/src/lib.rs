@@ -100,6 +100,12 @@ extern "C" {
 
     /// Sphinx syscall for xoring and rotating (to 7) two u32 words
     pub fn syscall_blake2s_xor_rotate_right_7(left: *mut u32, right: *const u32);
+
+    /// TODO docs
+    pub fn syscall_blake2s_xor_rotate_16(w: *mut u32);
+
+    /// TODO docs
+    pub fn syscall_blake2s_quarter_round_2x(left: *mut u32, right: *const u32);
 }
 
 pub use digest::{self, Digest};
